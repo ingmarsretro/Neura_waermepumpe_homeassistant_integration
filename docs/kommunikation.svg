@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" role="img" aria-labelledby="title desc">
+  <title id="title">Home Assistant and Neura heat pump</title>
+  <desc id="desc">The Home Assistant integration talks to the heat-pump controller over XML-RPC on the LAN. The sidebar UI is /neura_wp-panel. JSON stays under /api/neura_wp.</desc>
+  <style>
+    .box { fill: #fff; stroke: #e0e0e0; stroke-width: 1.5; }
+    .ha { stroke: #03a9f4; }
+    .pump { stroke: #ff9800; }
+    .hw { stroke: #9e9e9e; }
+    .title { font: 700 16px "Segoe UI", Roboto, sans-serif; fill: #212121; }
+    .sub { font: 12px "Segoe UI", Roboto, sans-serif; fill: #727272; }
+    .label { font: 13px "Segoe UI", Roboto, sans-serif; fill: #212121; }
+    .small { font: 11px "Segoe UI", Roboto, sans-serif; fill: #727272; }
+    .arrow { stroke: #0288d1; stroke-width: 2; fill: none; marker-end: url(#head); }
+    .arrow-orange { stroke: #ef6c00; stroke-width: 2; fill: none; marker-end: url(#head-o); }
+    .caption { font: 11px "Segoe UI", Roboto, sans-serif; fill: #0288d1; }
+    .bg { fill: #fafafa; }
+    .chip { fill: #e3f5fc; }
+    .chip-t { font: 11px "Segoe UI", Roboto, sans-serif; fill: #0277bd; }
+  </style>
+  <defs>
+    <marker id="head" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#0288d1"/>
+    </marker>
+    <marker id="head-o" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#ef6c00"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="960" height="640"/>
+
+  <text x="24" y="32" class="title">Kommunikation / Communication</text>
+  <text x="24" y="52" class="sub">Beispiel / example: Home Assistant 192.168.1.10 | Neura 192.168.1.100:80 | Benutzer / user kunde</text>
+
+  <rect class="box" x="40" y="80" width="200" height="88" rx="10"/>
+  <text x="140" y="112" text-anchor="middle" class="label">Browser / App</text>
+  <text x="140" y="132" text-anchor="middle" class="small">Home Assistant UI</text>
+  <text x="140" y="150" text-anchor="middle" class="small">Sidebar Neura</text>
+
+  <path class="arrow" d="M250,124 H310"/>
+  <text x="280" y="112" text-anchor="middle" class="caption">HTTP</text>
+  <text x="280" y="148" text-anchor="middle" class="caption">Token</text>
+
+  <rect class="box ha" x="320" y="72" width="280" height="200" rx="12"/>
+  <text x="460" y="98" text-anchor="middle" class="label">Home Assistant</text>
+  <text x="460" y="116" text-anchor="middle" class="small">192.168.1.10</text>
+  <rect class="chip" x="340" y="132" width="240" height="28" rx="6"/>
+  <text x="460" y="151" text-anchor="middle" class="chip-t">Panel /neura_wp-panel</text>
+  <rect class="chip" x="340" y="168" width="240" height="28" rx="6"/>
+  <text x="460" y="187" text-anchor="middle" class="chip-t">API /api/neura_wp</text>
+  <rect class="chip" x="340" y="204" width="240" height="28" rx="6"/>
+  <text x="460" y="223" text-anchor="middle" class="chip-t">Coordinator, 30 s polling</text>
+  <text x="460" y="256" text-anchor="middle" class="small">custom_components/neura_wp</text>
+
+  <path class="arrow" d="M460,272 V330"/>
+  <text x="478" y="292" class="caption">XML-RPC</text>
+  <text x="478" y="308" class="caption">http://192.168.1.100:80/xmlrpc</text>
+  <text x="478" y="324" class="caption">LAN, port 80 TCP</text>
+
+  <rect class="box pump" x="320" y="336" width="280" height="150" rx="12"/>
+  <text x="460" y="364" text-anchor="middle" class="label">Neura controller</text>
+  <text x="460" y="384" text-anchor="middle" class="small">192.168.1.100 | Jetty / biF / WebDialog</text>
+  <rect class="chip" x="340" y="400" width="240" height="28" rx="6"/>
+  <text x="460" y="419" text-anchor="middle" class="chip-t">ClientHandler, Config, IO, Log</text>
+  <text x="460" y="454" text-anchor="middle" class="small">Public session or login as kunde</text>
+  <text x="460" y="470" text-anchor="middle" class="small">Oeffentliche Sitzung oder Login kunde</text>
+
+  <path class="arrow-orange" d="M460,486 V530"/>
+  <text x="478" y="512" class="caption" style="fill:#ef6c00">CAN / I2C</text>
+
+  <rect class="box hw" x="320" y="530" width="280" height="86" rx="12"/>
+  <text x="460" y="562" text-anchor="middle" class="label">Heat pump / Waermepumpe</text>
+  <text x="460" y="582" text-anchor="middle" class="small">Compressor, pumps, sensors</text>
+  <text x="460" y="598" text-anchor="middle" class="small">Room terminal TRS11</text>
+
+  <rect class="box" x="640" y="72" width="280" height="544" rx="12"/>
+  <text x="780" y="102" text-anchor="middle" class="label">Ablauf / sequence</text>
+  <text x="660" y="132" class="small">1. Browser opens HA sidebar.</text>
+  <text x="660" y="148" class="small">   Iframe: /neura_wp-panel</text>
+  <text x="660" y="178" class="small">2. HTML has no API 401.</text>
+  <text x="660" y="194" class="small">   JSON uses HA Bearer token.</text>
+  <text x="660" y="224" class="small">3. Coordinator reads every 30 s</text>
+  <text x="660" y="240" class="small">   openConnection + snapshot.</text>
+  <text x="660" y="270" class="small">4. Reads: getAllKeys, IO,</text>
+  <text x="660" y="286" class="small">   error log, time programs.</text>
+  <text x="660" y="316" class="small">5. Writes only after login:</text>
+  <text x="660" y="332" class="small">   getChallenge - AES-CFB</text>
+  <text x="660" y="348" class="small">   - testChallenge (kunde).</text>
+  <text x="660" y="378" class="small">6. setDoubleValue /</text>
+  <text x="660" y="394" class="small">   setBooleanValue for heat</text>
+  <text x="660" y="410" class="small">   curve, DHW, manual modes.</text>
+  <text x="660" y="440" class="small">7. The board drives CAN</text>
+  <text x="660" y="456" class="small">   and the compressor itself.</text>
+  <text x="660" y="486" class="small">Home Assistant never talks</text>
+  <text x="660" y="502" class="small">to the compressor directly.</text>
+  <text x="660" y="532" class="small">Example user: kunde</text>
+  <text x="660" y="548" class="small">Beispiel-Benutzer: kunde</text>
+  <text x="660" y="572" class="small">Salt from user management</text>
+  <text x="660" y="588" class="small">Salt aus der Benutzerverwaltung</text>
+</svg>

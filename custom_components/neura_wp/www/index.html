@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neura Wärmepumpe</title>
+  <style>
+    :root {
+      --primary: #03a9f4;
+      --primary-dark: #0288d1;
+      --ha-blue: #03a9f4;
+      --bg: #fafafa;
+      --sidebar: #fff;
+      --card: #fff;
+      --ink: #212121;
+      --muted: #727272;
+      --line: #e0e0e0;
+      --heat: #ff9800;
+      --water: #03a9f4;
+      --ok: #4caf50;
+      --warn: #f44336;
+      --shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12);
+      --radius: 8px;
+      --sidebar-w: 256px;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Roboto, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .app { display: flex; min-height: 100%; }
+    aside {
+      width: var(--sidebar-w);
+      flex: 0 0 var(--sidebar-w);
+      background: var(--sidebar);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px 12px;
+      font-size: 20px;
+      font-weight: 400;
+    }
+    .brand svg { color: var(--primary); }
+    .brand small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+    nav.menus { padding: 8px 0 24px; }
+    .nav-label {
+      padding: 16px 20px 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--muted);
+    }
+    button.nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: calc(100% - 12px);
+      margin: 2px 12px 2px 0;
+      padding: 10px 16px 10px 20px;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      border-radius: 0 24px 24px 0;
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+    }
+    button.nav svg { width: 24px; height: 24px; flex: 0 0 auto; color: var(--muted); }
+    button.nav.active {
+      background: color-mix(in srgb, var(--primary) 18%, transparent);
+      color: var(--primary);
+      font-weight: 500;
+    }
+    button.nav.active svg { color: var(--primary); }
+    button.nav:hover:not(.active) { background: rgba(0,0,0,.04); }
+    .workspace { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-height: 56px;
+      padding: 8px 16px;
+      background: var(--card);
+      box-shadow: 0 2px 4px rgba(0,0,0,.1);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .icon-btn {
+      width: 40px; height: 40px; padding: 8px; border: 0; background: transparent; border-radius: 50%; cursor: pointer; color: var(--ink);
+    }
+    .icon-btn:hover { background: rgba(0,0,0,.06); }
+    #menu-toggle { display: none; }
+    h1 { margin: 0; font-size: 20px; font-weight: 400; flex: 0 0 auto; }
+    form.connect {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-left: auto;
+      align-items: end;
+    }
+    form.connect label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    input, button, select {
+      font: inherit;
+      border-radius: 4px;
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      background: white;
+    }
+    button.action, form.connect button[type=submit] {
+      background: var(--primary);
+      color: white;
+      border: 0;
+      cursor: pointer;
+      height: 36px;
+      padding: 0 16px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-size: 13px;
+    }
+    button.action:hover, form.connect button[type=submit]:hover { background: var(--primary-dark); }
+    button.action:disabled, button.ha-switch:disabled { opacity: .38; cursor: default; }
+    button.secondary {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      cursor: pointer;
+      height: 36px;
+      padding: 0 16px;
+      font-weight: 500;
+    }
+    .view { padding: 16px; }
+    .dash {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .dash.wide { grid-template-columns: 1fr; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .card.span-2 { grid-column: 1 / -1; }
+    .card h2, .card-title {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .climate {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 180px;
+    }
+    .climate .state { font-size: 14px; color: var(--muted); }
+    .climate .state.on { color: var(--ok); }
+    .temp { font-size: 48px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .temp span { font-size: 16px; color: var(--muted); }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .key { color: var(--muted); font-size: 12px; }
+    .note { color: var(--muted); white-space: pre-wrap; margin: 0; font-size: 14px; }
+    .warn { color: var(--warn); white-space: pre-wrap; margin: 8px 16px 0; }
+    #message { margin: 8px 16px 0; }
+    h3 { margin: 0 0 8px; font-size: 16px; font-weight: 500; }
+    .entities { display: flex; flex-direction: column; }
+    .entity-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 48px;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .entity-row:last-child { border-bottom: 0; }
+    .entity-icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+      color: var(--primary);
+      flex: 0 0 auto;
+    }
+    .entity-icon svg { width: 22px; height: 22px; }
+    .entity-icon.off { background: rgba(0,0,0,.06); color: var(--muted); }
+    .entity-icon.heat { background: color-mix(in srgb, var(--heat) 18%, transparent); color: var(--heat); }
+    .entity-text { flex: 1; min-width: 0; }
+    .entity-name { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    .entity-control { flex: 0 0 auto; }
+    .entity-control .row { justify-content: flex-end; }
+    .entity-control input { width: 110px; }
+    button.info {
+      width: 20px; height: 20px; padding: 0;
+      border-radius: 50%;
+      background: rgba(0,0,0,.06);
+      color: var(--muted);
+      border: 0;
+      font-style: italic;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .help-line { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .ha-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+    .ha-switch .track {
+      display: block;
+      width: 36px;
+      height: 14px;
+      margin-top: 3px;
+      border-radius: 7px;
+      background: #9e9e9e;
+      opacity: .54;
+    }
+    .ha-switch .thumb {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fafafa;
+      box-shadow: 0 2px 2px rgba(0,0,0,.24);
+      transition: transform .15s ease, background .15s ease;
+    }
+    .ha-switch.on .track { background: var(--ha-blue); opacity: .5; }
+    .ha-switch.on .thumb { transform: translateX(16px); background: var(--ha-blue); }
+    .curve { width: 100%; max-width: 720px; height: 240px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 4px; border-bottom: 1px solid var(--line); font-size: 14px; }
+    pre { margin: 0; white-space: pre-wrap; font-size: 12px; color: var(--muted); }
+    .user-card { margin-bottom: 12px; }
+    @media (max-width: 900px) {
+      aside {
+        position: fixed;
+        z-index: 20;
+        transform: translateX(-100%);
+        transition: transform .2s;
+      }
+      aside.open { transform: none; }
+      #menu-toggle { display: inline-flex; }
+      form.connect { margin-left: 0; }
+      .topbar { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside id="sidebar" hidden>
+      <div class="brand">
+        <svg viewBox="0 0 24 24" width="32" height="32"><path fill="currentColor" d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+        <div>Neura<small>Setup-Menüs wie im WebDialog</small></div>
+      </div>
+      <nav class="menus" id="menus"></nav>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <button type="button" class="icon-btn" id="menu-toggle" aria-label="Menü">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+        </button>
+        <h1 id="view-title">Neura Wärmepumpe</h1>
+        <form class="connect" id="connect">
+          <label>Adresse<input name="host" value="192.168.1.100" required></label>
+          <label>Port<input name="port" value="80" inputmode="numeric" style="width:72px"></label>
+          <label>Benutzer<input name="username" autocomplete="username"></label>
+          <label>Passwort<input name="password" type="password" autocomplete="current-password"></label>
+          <label>Salt<input name="salt" placeholder="optional"></label>
+          <button type="submit">Verbinden</button>
+        </form>
+      </header>
+      <p id="message" class="warn"></p>
+      <section class="view" id="board" hidden>
+        <div class="dash">
+          <article class="card climate">
+            <div class="state" id="heat-state">Heizung</div>
+            <div class="temp" id="heat-now">– <span>°C Vorlauf</span></div>
+            <form id="heat-form" class="row">
+              <input name="temperature" type="number" step="0.5" min="15" max="50" aria-label="Heizkurven-Start">
+              <button class="action" type="submit">Heizkurven-Start setzen</button>
+            </form>
+            <p class="key" id="heat-key"></p>
+          </article>
+          <article class="card climate">
+            <div class="state" id="water-state">Warmwasser</div>
+            <div class="temp" id="water-now">– <span>°C</span></div>
+            <form id="water-form" class="row">
+              <input name="temperature" type="number" step="0.5" min="10" max="70" aria-label="Warmwasser-Sollwert">
+              <button class="action" type="submit">Sollwert setzen</button>
+            </form>
+            <div class="entity-row" style="border:0;padding-top:8px">
+              <div class="entity-text"><div class="entity-name">Urlaub</div></div>
+              <button type="button" class="ha-switch" id="holiday-button" aria-label="Urlaub">
+                <span class="track"></span><span class="thumb"></span>
+              </button>
+            </div>
+          </article>
+          <article class="card span-2">
+            <h2>Heizkurve</h2>
+            <svg id="curve-overview" class="curve" viewBox="0 0 640 240" role="img" aria-label="Heizkurve"></svg>
+            <p class="note" id="last-log"></p>
+          </article>
+          <article class="card span-2">
+            <h2>Temperaturen und Ausgänge</h2>
+            <div class="entities" id="points"></div>
+          </article>
+          <article class="card span-2">
+            <h2>Zeitprogramme</h2>
+            <pre id="programs"></pre>
+          </article>
+        </div>
+      </section>
+      <section class="view" id="settings" hidden>
+        <div class="dash wide">
+          <article class="card">
+            <h2 class="card-title" id="settings-title">Einstellungen</h2>
+            <svg id="curve-settings" class="curve" viewBox="0 0 640 240" hidden role="img" aria-label="Heizkurve"></svg>
+            <p class="note" id="manual-note" hidden>Handbetriebe wie im Original-WebDialog: temporärer und permanenter Handbetrieb, UWP-Dauerlauf, FU-Handbetrieb (−1 = Automatik), Boiler-Schnellaufheizung, Abtauung und Unterwasserpumpe. Schreiben braucht eine Anmeldung.</p>
+            <div id="error-log-box" hidden>
+              <h3>Fehlerlog</h3>
+              <p class="note">Gespeicherte Störungseinträge der Regelung. Ein altes Datum ist kein aktueller Alarm. Diagramme (Charts) liegen im Datenlogger der Platine, nicht in dieser Liste.</p>
+              <table>
+                <thead><tr><th>Zeit</th><th>Eintrag</th></tr></thead>
+                <tbody id="error-log-rows"></tbody>
+              </table>
+            </div>
+            <div id="users-box" hidden>
+              <p class="note">Rollen wie im Original: Neura, Partner, Kunde. Das Salt braucht ihr für Schreibzugriff in dieser Oberfläche. Benutzerverwaltung.</p>
+              <div id="users-rows"></div>
+              <form id="user-add" class="row" style="margin-top:12px">
+                <input name="username" placeholder="Neuer Benutzer" required>
+                <select name="group">
+                  <option value="0">Neura</option>
+                  <option value="1">Partner</option>
+                  <option value="2" selected>Kunde</option>
+                </select>
+                <input name="password" type="password" placeholder="Passwort" required>
+                <button class="action" type="submit">Anlegen</button>
+              </form>
+            </div>
+            <div id="system-box" hidden>
+              <p>Neustart entspricht dem WebDialog-Punkt „Neustart durchführen“ und startet die Regelung auf der Platine neu. CAN und Raumterminal kommen mit der Regelung wieder.</p>
+              <div class="row" style="margin-top:12px">
+                <button type="button" class="action" id="restart-btn">Regelung neu starten</button>
+                <button type="button" class="secondary" id="shutdown-btn">Rechner herunterfahren</button>
+              </div>
+              <p class="note" id="power-note"></p>
+            </div>
+            <div id="settings-table">
+              <div class="entities" id="settings-fields"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </div>
+  <script>
+    const HA = Boolean(window.NEURA_HA) || location.pathname.includes("neura_wp");
+    const API_BASE = window.NEURA_API_BASE || (HA ? "/api/neura_wp" : "/api");
+    const message = document.querySelector("#message");
+    const board = document.querySelector("#board");
+    const menusEl = document.querySelector("#menus");
+    const settingsEl = document.querySelector("#settings");
+    const sidebar = document.querySelector("#sidebar");
+    let holiday = false;
+    let snapshot = null;
+    let page = "overview";
+    let privileged = false;
+    if (HA) document.querySelector("#connect").hidden = true;
+
+    const PATHS = {
+      home: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
+      chart: "M3 13h2v8H3v-8m4-6h2v14H7V7m4-4h2v18h-2V3m4 8h2v10h-2V11m4-6h2v16h-2V5z",
+      water: "M12 2c-5.33 5.33-8 9.33-8 12a8 8 0 0016 0c0-2.67-2.67-6.67-8-12z",
+      fire: "M13.5 1s0 7-5 7c0 0 1-3 1-5-4 2-8 6-8 11a8 8 0 0016 0c0-6-4.5-9-4.5-13z",
+      snow: "M12 2l1.5 4H17l-3 2.2 1.2 3.8L12 10.2 8.8 12 10 8.2 7 6h3.5L12 2m0 20l-1.5-4H7l3-2.2-1.2-3.8L12 13.8 15.2 12 14 15.8 17 18h-3.5L12 22z",
+      timer: "M12 20a8 8 0 100-16 8 8 0 000 16m.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z",
+      floor: "M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8z",
+      bag: "M9 3c-.6 0-1 .4-1 1v1H5c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3V4c0-.6-.4-1-1-1H9m1 2h4v1h-4V5z",
+      hand: "M23 5.5a3.5 3.5 0 00-4.9 0L12 11.6V7a2 2 0 00-4 0v10.5l-2.1-.7a2 2 0 00-2.5 1.1L3 19.3 8.4 22H17a4 4 0 004-4V5.5z",
+      mixer: "M3 17v2h6v-2H3M3 5v2h10V5H3m10 6v2h8v-2h-8M14 5v2h7V5h-7M3 11v2h6v-2H3m10 6v2h8v-2h-8z",
+      sun: "M12 7a5 5 0 100 10 5 5 0 000-10M12 1v2m0 18v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M1 12h2m18 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4z",
+      share: "M18 16a3 3 0 00-2.2 1l-6-3.4A3 3 0 0010 12a3 3 0 00-.2-1.1L16 7.5A3 3 0 0018 8a3 3 0 10-3-3 3 3 0 00.2 1.1L9.2 9.6A3 3 0 006 8a3 3 0 103 3 3 3 0 00.2-1.1l6 3.4A3 3 0 0018 13a3 3 0 100 3z",
+      counter: "M4 4h16v4H4V4m0 6h10v4H4v-4m0 6h16v4H4v-4z",
+      fan: "M12 11a1 1 0 100 2 1 1 0 000-2m.5-9C16 4 20 8 20 12c-2.5-1-4-2-5.5-4.5C16 10 16 12 12.5 13.5 16 13 19 15 20 20c-4 0-8-4-8-8.5C10.5 16 8 18 4 20c1-5 4-7 7.5-6.5C8 12 8 10 10.5 7.5 8 9 6 10 4 12c0-4 4-8 8.5-10z",
+      cog: "M12 15.5A3.5 3.5 0 1115.5 12 3.5 3.5 0 0112 15.5m7.4-2.7l1.8-1.1-1.8-3.1-2.1.3a6.7 6.7 0 00-1.5-.9l-.4-2.1h-3.6l-.4 2.1a6.7 6.7 0 00-1.5.9l-2.1-.3-1.8 3.1 1.8 1.1a5.5 5.5 0 000 1.8l-1.8 1.1 1.8 3.1 2.1-.3c.5.4 1 .7 1.5.9l.4 2.1h3.6l.4-2.1c.5-.2 1-.5 1.5-.9l2.1.3 1.8-3.1-1.8-1.1c.1-.6.1-1.2 0-1.8z",
+      chartbar: "M22 21H2V3h2v16h2v-9h4v9h2V8h4v11h2V6h4v15z",
+      account: "M12 4a4 4 0 110 8 4 4 0 010-8m0 10c4.4 0 8 1.8 8 4v2H4v-2c0-2.2 3.6-4 8-4z",
+      power: "M16.6 5.4A8 8 0 104 12h2a6 6 0 118.5 5.7l.9 1.8A8 8 0 0016.6 5.4M11 2h2v10h-2V2z",
+      dots: "M12 8a2 2 0 110-4 2 2 0 010 4m0 6a2 2 0 110-4 2 2 0 010 4m0 6a2 2 0 110-4 2 2 0 010 4z",
+      thermo: "M15 13V5a3 3 0 00-6 0v8a5 5 0 106 0m-3 4a2 2 0 01-2-2h2a2 2 0 012 2 2 2 0 01-2 2z",
+      flash: "M7 2v11h3v9l7-12h-4l4-8H7z",
+    };
+    const MENU_ICON = {
+      overview: "home", heatcurve: "chart", cylinder: "water", backupheat: "fire",
+      inhib: "snow", delay: "timer", screed: "floor", holiday: "bag", manual: "hand",
+      mixer: "mixer", solar: "sun", cascade: "share", counter: "counter", air: "fan",
+      settings: "cog", stats: "chartbar", users: "account", system: "power", other: "dots",
+    };
+
+    function svgIcon(name) {
+      return `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${PATHS[name] || PATHS.cog}"/></svg>`;
+    }
+
+    function fieldIcon(field) {
+      const key = field.key || "";
+      if (field.kind === "bool") return "flash";
+      if (key.includes("temp") || key.includes("heatcurve") || key.includes("outside")) return "thermo";
+      if (key.includes("cylinder") || key.includes("water")) return "water";
+      if (key.includes("ophours") || key.includes("counter")) return "chartbar";
+      return "cog";
+    }
+
+    function show(text) { message.textContent = text || ""; }
+
+    function haAccessToken() {
+      const keys = ["hassTokens", "hass_tokens"];
+      const stores = [];
+      try { stores.push(window.localStorage); } catch (e) {}
+      try { stores.push(window.sessionStorage); } catch (e) {}
+      try {
+        if (window.parent && window.parent !== window) {
+          stores.push(window.parent.localStorage);
+          stores.push(window.parent.sessionStorage);
+        }
+      } catch (e) {}
+      for (const store of stores) {
+        if (!store) continue;
+        for (const key of keys) {
+          let raw = null;
+          try { raw = store.getItem(key); } catch (e) { continue; }
+          if (!raw) continue;
+          try {
+            const data = JSON.parse(raw);
+            const token = data.access_token || data.accessToken;
+            if (token) return token;
+          } catch (e) {}
+        }
+      }
+      return null;
+    }
+
+    async function api(path, body) {
+      const suffix = path.startsWith("/api/") ? path.slice(4) : path;
+      const headers = {};
+      if (body) headers["Content-Type"] = "application/json";
+      const token = haAccessToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(`${API_BASE}${suffix}`, {
+        method: body ? "POST" : "GET",
+        credentials: "same-origin",
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const text = await response.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { error: text }; }
+      if (!response.ok) throw new Error(data.error || text || "Anfrage fehlgeschlagen");
+      return data;
+    }
+
+    function fmt(value) {
+      return value === null || value === undefined || value === "" ? "–" : value;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function analogUnit(ident) {
+      const id = (ident || "").toLowerCase();
+      return id === "hochdruck" || id === "niederdruck" ? "bar" : "°C";
+    }
+
+    function boolOn(value) {
+      return value === true || String(value).toLowerCase() === "true" || value === 1 || value === "1";
+    }
+
+    function switchHtml(on, attrs) {
+      return `<button type="button" class="ha-switch${on ? " on" : ""}" ${attrs} aria-pressed="${on}">
+        <span class="track"></span><span class="thumb"></span>
+      </button>`;
+    }
+
+    function navButton(item) {
+      const icon = MENU_ICON[item.id] || "cog";
+      return `<button type="button" class="nav${page === item.id ? " active" : ""}" data-page="${escapeHtml(item.id)}">${svgIcon(icon)}<span>${escapeHtml(item.title)}</span></button>`;
+    }
+
+    function renderNav() {
+      const setup = snapshot.menus || [];
+      const extra = [{ id: "users", title: "Benutzer" }, { id: "system", title: "System" }];
+      menusEl.innerHTML =
+        `<div class="nav-label">Dashboards</div>${navButton({ id: "overview", title: "Übersicht" })}` +
+        `<div class="nav-label">Setup</div>${setup.map(navButton).join("")}` +
+        `<div class="nav-label">Anlage</div>${extra.map(navButton).join("")}`;
+      sidebar.hidden = false;
+    }
+
+    function renderOverview() {
+      const data = snapshot;
+      const heat = data.heating || {};
+      const water = data.cylinder || {};
+      holiday = !!heat.holiday;
+      document.querySelector("#heat-now").innerHTML = `${fmt(heat.flow ?? heat.current)} <span>°C Vorlauf</span>`;
+      document.querySelector("#water-now").innerHTML = `${fmt(water.current)} <span>°C</span>`;
+      const heatInput = document.querySelector("#heat-form [name=temperature]");
+      const waterInput = document.querySelector("#water-form [name=temperature]");
+      if (document.activeElement !== heatInput) heatInput.value = heat.target ?? "";
+      if (document.activeElement !== waterInput) waterInput.value = water.target ?? "";
+      document.querySelector("#heat-key").textContent = heat.target_key ? `Sollwert über ${heat.target_key}` : "";
+      const heatState = document.querySelector("#heat-state");
+      heatState.textContent = heat.running ? "Heizung läuft" : "Heizung";
+      heatState.className = "state" + (heat.running ? " on" : "");
+      const waterState = document.querySelector("#water-state");
+      waterState.textContent = water.running ? "Warmwasser läuft" : "Warmwasser";
+      waterState.className = "state" + (water.running ? " on" : "");
+      const hol = document.querySelector("#holiday-button");
+      hol.classList.toggle("on", holiday);
+      hol.setAttribute("aria-pressed", holiday ? "true" : "false");
+      const rows = []
+        .concat((data.analogs || []).map((p) => ({
+          icon: "thermo",
+          name: p.label,
+          value: p.value === null || p.value === undefined ? "–" : `${p.value} ${analogUnit(p.id)}`,
+          on: true,
+        })))
+        .concat((data.digital_out || []).map((p) => ({
+          icon: "flash",
+          name: p.label,
+          value: p.value ? "ein" : "aus",
+          on: !!p.value,
+        })))
+        .concat((data.digital_in || []).map((p) => ({
+          icon: "flash",
+          name: p.label,
+          value: p.value ? "aktiv" : "aus",
+          on: !!p.value,
+        })));
+      document.querySelector("#points").innerHTML = rows.map((row) => `
+        <div class="entity-row">
+          <div class="entity-icon${row.on ? "" : " off"}${row.icon === "thermo" ? " heat" : ""}">${svgIcon(row.icon)}</div>
+          <div class="entity-text"><div class="entity-name">${escapeHtml(row.name)}</div></div>
+          <div class="entity-control">${escapeHtml(row.value)}</div>
+        </div>`).join("");
+      document.querySelector("#programs").textContent = JSON.stringify(data.timeprograms || [], null, 2);
+      drawCurve(document.querySelector("#curve-overview"), (data.heating || {}).curve || [], data.heating || {});
+    }
+
+    function drawCurve(svg, curve, heating) {
+      if (!svg) return;
+      const width = 640;
+      const height = 240;
+      const pad = { l: 48, r: 20, t: 16, b: 36 };
+      const pts = (curve || []).filter((p) => p.outside != null && p.flow != null);
+      if (!pts.length) {
+        svg.innerHTML = `<text x="20" y="28" fill="#727272">Keine Heizkurvenpunkte gemeldet.</text>`;
+        return;
+      }
+      const xs = pts.map((p) => Number(p.outside));
+      const ys = pts.map((p) => Number(p.flow));
+      if (heating && heating.outdoor != null) xs.push(Number(heating.outdoor));
+      if (heating && heating.flow != null) ys.push(Number(heating.flow));
+      const xMin = Math.min(-20, ...xs) - 2;
+      const xMax = Math.max(15, ...xs) + 2;
+      const yMin = Math.min(15, ...ys) - 2;
+      const yMax = Math.max(50, ...ys) + 2;
+      const x = (v) => pad.l + (xMax - v) / (xMax - xMin) * (width - pad.l - pad.r);
+      const y = (v) => pad.t + (yMax - v) / (yMax - yMin) * (height - pad.t - pad.b);
+      const sorted = pts.slice().sort((a, b) => Number(b.outside) - Number(a.outside));
+      const line = sorted.map((p) => `${x(Number(p.outside)).toFixed(1)},${y(Number(p.flow)).toFixed(1)}`).join(" ");
+      const dots = sorted.map((p) =>
+        `<circle cx="${x(Number(p.outside)).toFixed(1)}" cy="${y(Number(p.flow)).toFixed(1)}" r="4" fill="#ff9800"></circle>
+         <text x="${x(Number(p.outside)).toFixed(1)}" y="${(y(Number(p.flow)) - 8).toFixed(1)}" text-anchor="middle" font-size="11" fill="#212121">${escapeHtml(p.name)} ${Number(p.flow)}° / ${Number(p.outside)}°</text>`
+      ).join("");
+      let now = "";
+      if (heating && heating.outdoor != null && heating.flow != null) {
+        now = `<circle cx="${x(Number(heating.outdoor)).toFixed(1)}" cy="${y(Number(heating.flow)).toFixed(1)}" r="5" fill="#03a9f4"></circle>
+               <text x="${(x(Number(heating.outdoor)) + 8).toFixed(1)}" y="${(y(Number(heating.flow)) + 4).toFixed(1)}" font-size="11" fill="#03a9f4">Ist ${Number(heating.flow)}°</text>`;
+      }
+      const xTicks = [xMax, 0, xMin].filter((v, i, arr) => arr.indexOf(v) === i);
+      const yTicks = [yMin, Math.round((yMin + yMax) / 2), yMax];
+      const xt = xTicks.map((v) =>
+        `<text x="${x(v).toFixed(1)}" y="${height - pad.b + 16}" text-anchor="middle" font-size="11" fill="#727272">${Math.round(v)}</text>`
+      ).join("");
+      const yt = yTicks.map((v) =>
+        `<text x="${pad.l - 6}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#727272">${Math.round(v)}</text>`
+      ).join("");
+      svg.innerHTML = `
+        <rect x="0" y="0" width="${width}" height="${height}" fill="#fff"></rect>
+        <line x1="${pad.l}" y1="${height - pad.b}" x2="${width - pad.r}" y2="${height - pad.b}" stroke="#e0e0e0"></line>
+        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${height - pad.b}" stroke="#e0e0e0"></line>
+        <text x="${width / 2}" y="${height - 8}" text-anchor="middle" font-size="12" fill="#727272">Außentemperatur °C (kälter nach rechts)</text>
+        <text x="14" y="14" font-size="12" fill="#727272">Vorlauf °C</text>
+        ${xt}${yt}
+        <polyline fill="none" stroke="#ff9800" stroke-width="2.5" points="${line}"></polyline>
+        ${dots}${now}
+      `;
+    }
+
+    function renderSettings() {
+      const menu = (snapshot.menus || []).find((item) => item.id === page);
+      const usersPage = page === "users";
+      const systemPage = page === "system";
+      const heatPage = page === "heatcurve";
+      const manualPage = page === "manual";
+      const statsPage = page === "stats";
+      const title = usersPage ? "Benutzerverwaltung" : systemPage ? "System" : (menu ? menu.title : "Einstellungen");
+      document.querySelector("#settings-title").textContent = title;
+      document.querySelector("#view-title").textContent = title;
+      document.querySelector("#users-box").hidden = !usersPage;
+      document.querySelector("#system-box").hidden = !systemPage;
+      document.querySelector("#settings-table").hidden = usersPage || systemPage;
+      document.querySelector("#curve-settings").hidden = !heatPage;
+      document.querySelector("#manual-note").hidden = !manualPage;
+      document.querySelector("#error-log-box").hidden = !statsPage;
+      if (statsPage) renderErrorLog();
+      if (heatPage) drawCurve(document.querySelector("#curve-settings"), (snapshot.heating || {}).curve || [], snapshot.heating || {});
+      document.querySelectorAll("#user-add input, #user-add select, #user-add button").forEach((el) => {
+        el.disabled = !privileged;
+      });
+      document.querySelector("#restart-btn").disabled = !privileged;
+      if (usersPage) {
+        renderUsers();
+        return;
+      }
+      if (systemPage) return;
+      if (!menu) return;
+      const active = document.activeElement;
+      const focusKey = active && active.dataset ? active.dataset.key : "";
+      const focusValue = focusKey ? active.value : null;
+      document.querySelector("#settings-fields").innerHTML = (menu.fields || []).map((field) => {
+        const disabled = !privileged || !field.writable;
+        let control;
+        if (field.kind === "bool") {
+          const on = boolOn(field.value);
+          control = switchHtml(on, `data-action="toggle" data-key="${escapeHtml(field.key)}" data-on="${on ? "1" : "0"}" ${disabled ? "disabled" : ""}`);
+        } else {
+          control = `<div class="row">
+            <input data-key="${escapeHtml(field.key)}" data-kind="${escapeHtml(field.kind)}" ${field.kind === "number" ? 'type="number" step="any"' : 'type="text"'} value="${escapeHtml(field.value ?? "")}" ${disabled ? "disabled" : ""}>
+            <button type="button" class="secondary" data-action="save" data-key="${escapeHtml(field.key)}" ${disabled ? "disabled" : ""}>Setzen</button>
+          </div>`;
+        }
+        return `<div class="entity-row">
+          <div class="entity-icon">${svgIcon(fieldIcon(field))}</div>
+          <div class="entity-text">
+            <div class="entity-name">${escapeHtml(field.label)}<button type="button" class="info" title="${escapeHtml(field.help || "")}">i</button></div>
+            <div class="key">${escapeHtml(field.key)}</div>
+          </div>
+          <div class="entity-control">${control}</div>
+        </div>`;
+      }).join("") || `<p class="note">Keine Werte in diesem Menü.</p>`;
+      if (focusKey) {
+        const again = document.querySelector(`#settings-fields input[data-key="${CSS.escape(focusKey)}"]`);
+        if (again) {
+          again.focus();
+          again.value = focusValue;
+        }
+      }
+    }
+
+    function renderErrorLog() {
+      const rows = snapshot.error_log || [];
+      document.querySelector("#error-log-rows").innerHTML = rows.map((entry) =>
+        `<tr><td>${escapeHtml(entry.when || "")}</td><td>${escapeHtml(entry.text || entry.label || entry.code || "")}</td></tr>`
+      ).join("") || `<tr><td colspan="2">Kein Fehlerlog gemeldet.</td></tr>`;
+    }
+
+    function renderUsers() {
+      const rows = snapshot.users || [];
+      const disabled = !privileged;
+      document.querySelector("#users-rows").innerHTML = rows.map((user) => `
+        <div class="entity-row user-card">
+          <div class="entity-icon">${svgIcon("account")}</div>
+          <div class="entity-text">
+            <div class="entity-name">${escapeHtml(user.username)} · ${escapeHtml(user.role)}</div>
+            <div class="key">${user.active === false ? "gesperrt" : "aktiv"} · Salt ${escapeHtml(user.salt || "–")}</div>
+            <form class="row user-pass" data-username="${escapeHtml(user.username)}" style="margin-top:6px">
+              <input name="password" type="password" placeholder="Neues Passwort" ${disabled ? "disabled" : ""}>
+              <button class="secondary" type="submit" ${disabled ? "disabled" : ""}>Passwort</button>
+            </form>
+          </div>
+          <div class="entity-control">
+            <div class="row">
+              <button type="button" class="secondary" data-user-action="salt" data-username="${escapeHtml(user.username)}" data-salt="${escapeHtml(user.salt || "")}">Salt übernehmen</button>
+              ${switchHtml(user.active !== false, `data-user-action="${user.active === false ? "unlock" : "lock"}" data-username="${escapeHtml(user.username)}" ${disabled ? "disabled" : ""} aria-label="${user.active === false ? "Entsperren" : "Sperren"}"`)}
+            </div>
+          </div>
+        </div>
+      `).join("") || `<p class="note">Keine Benutzer gemeldet.</p>`;
+    }
+
+    function notesFrom(data) {
+      const notes = [];
+      if (data.login_error) notes.push(data.login_error);
+      if (!data.privileged) notes.push("Sitzung ohne Benutzerrecht. Lesen geht, Schreiben und Benutzerverwaltung verlangen Benutzer und Salt (steht unter Benutzer).");
+      (data.warnings || []).forEach((w) => notes.push(w));
+      const error = data.last_error;
+      if (error && error.text && !error.historic) notes.push("Aktueller Fehler: " + error.text);
+      return notes.join("\n");
+    }
+
+    function render(data) {
+      snapshot = data;
+      privileged = !!data.privileged;
+      const text = notesFrom(data);
+      const alarm = data.last_error && data.last_error.text && !data.last_error.historic;
+      message.className = (data.login_error || (data.warnings || []).length || alarm) ? "warn" : "note";
+      show(text);
+      const log = document.querySelector("#last-log");
+      if (log) log.textContent = data.last_error && data.last_error.historic ? data.last_error.text : "";
+      renderNav();
+      const overview = page === "overview";
+      board.hidden = !overview;
+      settingsEl.hidden = overview;
+      if (overview) {
+        document.querySelector("#view-title").textContent = "Übersicht";
+        renderOverview();
+      } else renderSettings();
+    }
+
+    function showPage(next) {
+      page = next;
+      sidebar.classList.remove("open");
+      if (!snapshot) return;
+      render(snapshot);
+    }
+
+    async function saveConfig(key, value) {
+      render(await api("/api/config", { key, value }));
+    }
+
+    document.querySelector("#menu-toggle").addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+
+    menusEl.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-page]");
+      if (button) showPage(button.dataset.page);
+    });
+
+    settingsEl.addEventListener("click", async (event) => {
+      const info = event.target.closest("button.info");
+      if (info) {
+        const row = info.closest(".entity-row");
+        const open = row && row.querySelector(".help-line");
+        if (open) { open.remove(); return; }
+        const line = document.createElement("div");
+        line.className = "help-line";
+        line.textContent = info.getAttribute("title") || "";
+        info.parentElement.after(line);
+        return;
+      }
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const key = button.dataset.key;
+      try {
+        if (button.dataset.action === "toggle") {
+          await saveConfig(key, button.dataset.on !== "1");
+        } else if (button.dataset.action === "save") {
+          const input = settingsEl.querySelector(`input[data-key="${CSS.escape(key)}"]`);
+          let value = input.value;
+          if (input.dataset.kind === "number" && value !== "") value = Number(value);
+          await saveConfig(key, value);
+        }
+      } catch (error) {
+        show(error.message);
+      }
+    });
+
+    document.querySelector("#connect").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      try {
+        page = "overview";
+        render(await api("/api/connect", Object.fromEntries(form.entries())));
+      } catch (error) {
+        show(error.message);
+      }
+    });
+
+    document.querySelector("#heat-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        render(await api("/api/heating", { temperature: Number(new FormData(event.target).get("temperature")) }));
+      } catch (error) { show(error.message); }
+    });
+
+    document.querySelector("#water-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        render(await api("/api/cylinder", { temperature: Number(new FormData(event.target).get("temperature")) }));
+      } catch (error) { show(error.message); }
+    });
+
+    document.querySelector("#holiday-button").addEventListener("click", async () => {
+      try { render(await api("/api/holiday", { active: !holiday })); }
+      catch (error) { show(error.message); }
+    });
+
+    document.querySelector("#user-add").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      try {
+        render(await api("/api/user", {
+          action: "add",
+          username: form.get("username"),
+          group: Number(form.get("group")),
+          password: form.get("password"),
+        }));
+        event.target.reset();
+      } catch (error) { show(error.message); }
+    });
+
+    document.querySelector("#users-box").addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-user-action]");
+      if (!button) return;
+      const username = button.dataset.username;
+      if (button.dataset.userAction === "salt") {
+        document.querySelector("#connect [name=username]").value = username;
+        document.querySelector("#connect [name=salt]").value = button.dataset.salt || "";
+        show("Benutzer und Salt ins Verbindungsformular übernommen. Passwort eintragen und erneut verbinden.");
+        return;
+      }
+      try {
+        render(await api("/api/user", { action: button.dataset.userAction, username }));
+      } catch (error) { show(error.message); }
+    });
+
+    document.querySelector("#users-box").addEventListener("submit", async (event) => {
+      const form = event.target.closest("form.user-pass");
+      if (!form) return;
+      event.preventDefault();
+      try {
+        render(await api("/api/user", {
+          action: "password",
+          username: form.dataset.username,
+          password: new FormData(form).get("password"),
+        }));
+      } catch (error) { show(error.message); }
+    });
+
+    document.querySelector("#restart-btn").addEventListener("click", async () => {
+      if (!window.confirm("Regelung wirklich neu starten? Die Verbindung bricht kurz ab.")) return;
+      try {
+        const data = await api("/api/power", { action: "restart" });
+        show(data.message || "Neustart ausgelöst.");
+      } catch (error) { show(error.message); }
+    });
+
+    document.querySelector("#shutdown-btn").addEventListener("click", async () => {
+      try {
+        await api("/api/power", { action: "shutdown" });
+      } catch (error) {
+        document.querySelector("#power-note").textContent = error.message;
+        show(error.message);
+      }
+    });
+
+    setInterval(async () => {
+      if (!snapshot) return;
+      try { render(await api("/api/status")); } catch (error) { show(error.message); }
+    }, 30000);
+
+    if (HA) {
+      api("/api/status").then((data) => {
+        page = "overview";
+        render(data);
+      }).catch((error) => show(error.message));
+    }
+  </script>
+</body>
+</html>

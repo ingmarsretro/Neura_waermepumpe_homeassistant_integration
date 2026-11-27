@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Neura heat pump",
+        "description": "The controller on the board stays in charge. Username and salt are only needed for write access.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "username": "Username",
+          "password": "Password",
+          "salt": "Salt"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "The controller at this address did not answer."
+    },
+    "abort": {
+      "already_configured": "This heat pump is already configured."
+    }
+  }
+}

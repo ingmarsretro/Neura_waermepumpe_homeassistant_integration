@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Neura Wärmepumpe",
+        "description": "Die Regelung auf der Platine bleibt zuständig. Benutzer und Salt sind nur für Schreibzugriff nötig.",
+        "data": {
+          "host": "Adresse",
+          "port": "Port",
+          "username": "Benutzer",
+          "password": "Passwort",
+          "salt": "Salt"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Die Regelung unter dieser Adresse antwortet nicht."
+    },
+    "abort": {
+      "already_configured": "Diese Wärmepumpe ist bereits eingerichtet."
+    }
+  }
+}
